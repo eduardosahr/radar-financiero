@@ -74,3 +74,13 @@ noticias:
     FUNO11.MX: '"Fibra Uno" OR FUNO'
     FIBRAMQ12.MX: '"Fibra Macquarie" OR FIBRAMQ'
   dias_busqueda: 2   # antigüedad máxima de las notas en Google Noticias
+
+analisis:
+  activo: true                  # false para no gastar en la API
+  modelo: claude-haiku-5-5
+  precio_usd_por_millon:        # para estimar el gasto (verificar en la consola de Anthropic)
+    entrada: 0.10
+    salida: 0.50
+  horas_atras: 48               # solo analiza notas publicadas en este periodo
+  notas_por_llamada: 20
+  maximo_por_corrida: 400       # tope de seguridad de gasto por corrida

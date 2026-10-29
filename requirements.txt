@@ -4,3 +4,4 @@ requests>=2.32
 python-dotenv>=1.0
 PyYAML>=6.0
 feedparser>=6.0
+anthropic>=2.3

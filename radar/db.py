@@ -35,6 +35,33 @@ CREATE TABLE IF NOT EXISTS noticias (
 );
 CREATE INDEX IF NOT EXISTS idx_noticias_publicada ON noticias (publicada);
 
+CREATE TABLE IF NOT EXISTS analisis (
+    noticia_id  TEXT PRIMARY KEY REFERENCES noticias (id),
+    relevante   INTEGER NOT NULL,   -- 1 si puede mover algún activo o el mercado mexicano
+    categoria   TEXT,
+    horizonte   TEXT,               -- dias | semanas | meses
+    confianza   TEXT,               -- baja | media | alta
+    resumen     TEXT,
+    modelo      TEXT NOT NULL,
+    analizada   TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS efectos (
+    noticia_id  TEXT NOT NULL REFERENCES noticias (id),
+    ticker      TEXT NOT NULL,
+    direccion   TEXT NOT NULL,      -- sube | baja | incierto (precio del ticker)
+    PRIMARY KEY (noticia_id, ticker)
+);
+
+CREATE TABLE IF NOT EXISTS uso_api (
+    fecha          TEXT NOT NULL,   -- AAAA-MM-DD HH:MM:SS UTC
+    modelo         TEXT NOT NULL,
+    llamadas       INTEGER NOT NULL,
+    tokens_entrada INTEGER NOT NULL,
+    tokens_salida  INTEGER NOT NULL,
+    costo_usd      REAL NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS activos (
     clave   TEXT PRIMARY KEY,       -- ticker o id de serie
     nombre  TEXT NOT NULL,
