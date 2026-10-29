@@ -1,0 +1,44 @@
+# Lista de seguimiento del Radar Financiero.
+# Para agregar un activo, copia una línea y cambia el ticker (formato de Yahoo Finance).
+
+precios:
+  historia_inicial: "2020-01-01"   # desde cuándo descargar la primera vez
+
+  indices_y_mercados:
+    "^MXX": S&P/BMV IPC
+    "^GSPC": S&P 500
+    "^VIX": VIX (volatilidad S&P 500)
+    "MXN=X": USD/MXN
+    "CL=F": Petróleo WTI
+    "GC=F": Oro
+
+  emisoras:
+    # Bancos y financieras
+    "GFNORTEO.MX": Banorte
+    "BBAJIOO.MX": BanBajío
+    "GFINBURO.MX": Inbursa
+    # Grandes emisoras
+    "WALMEX.MX": Walmart de México
+    "AMXB.MX": América Móvil
+    "FEMSAUBD.MX": FEMSA
+    "GMEXICOB.MX": Grupo México
+    "CEMEXCPO.MX": Cemex
+    # FIBRAs (bienes raíces)
+    "FUNO11.MX": Fibra Uno
+    "FIBRAMQ12.MX": Fibra Macquarie
+
+macro:
+  banxico:
+    # Catálogo: https://www.banxico.org.mx/SieAPIRest/service/v1/doc/catalogoSeries
+    SF43718: Tipo de cambio FIX
+    SF61745: Tasa objetivo Banxico
+    SF60648: TIIE 28 días
+    SF60633: CETES 28 días
+    SP68257: Valor de la UDI
+
+  fred:
+    # Catálogo: https://fred.stlouisfed.org
+    DFF: Tasa de fondos federales (efectiva)
+    DGS10: Bono del Tesoro EE. UU. 10 años
+    CPIAUCSL: Inflación EE. UU. (índice CPI)
+    UNRATE: Desempleo EE. UU.
