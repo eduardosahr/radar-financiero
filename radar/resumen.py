@@ -6,6 +6,10 @@ Uso:  python -m radar.resumen
 import pandas as pd
 
 from radar import db
+from radar.collectors import noticias
+
+TITULARES_POR_TEMA = 3
+TITULARES_GENERALES = 10
 
 # Variación del último cierre contra el cierre de hace N sesiones.
 CONSULTA_PRECIOS = """
@@ -42,13 +46,33 @@ def variacion(actual: pd.Series, previo: pd.Series) -> pd.Series:
     return ((actual / previo - 1) * 100).round(2)
 
 
+def imprimir_noticias(n: pd.DataFrame, nombres: dict) -> None:
+    print(f"\nNOTICIAS (últimas 24 h: {len(n)})")
+    if n.empty:
+        return
+    hora = lambda s: s[11:16] if isinstance(s, str) else "     "
+
+    temas = n[n["clave"].notna()]
+    for clave, grupo in temas.groupby("clave", sort=False):
+        print(f"\n  {nombres.get(clave, clave)} ({len(grupo)})")
+        for _, f in grupo.head(TITULARES_POR_TEMA).iterrows():
+            print(f"    {hora(f['publicada'])}  {f['titulo'][:95]}  [{f['medio']}]")
+
+    print("\n  Generales")
+    for _, f in n[n["clave"].isna()].head(TITULARES_GENERALES).iterrows():
+        print(f"    {hora(f['publicada'])}  {f['titulo'][:95]}  [{f['medio']}]")
+    print("\n  Horas en UTC (Ciudad de México = UTC - 6).")
+
+
 def main() -> None:
     con = db.conectar()
     p = pd.read_sql(CONSULTA_PRECIOS, con)
     m = pd.read_sql(CONSULTA_MACRO, con)
+    n = noticias.recientes(con)
+    nombres = dict(con.execute("SELECT clave, nombre FROM activos").fetchall())
     con.close()
 
-    if p.empty and m.empty:
+    if p.empty and m.empty and n.empty:
         print("La base está vacía. Corre primero:  python -m radar.actualizar")
         return
 
@@ -63,6 +87,8 @@ def main() -> None:
     if not m.empty:
         print("\nMACRO (último dato)")
         print(m[["fuente", "nombre", "fecha", "valor"]].to_string(index=False))
+
+    imprimir_noticias(n, nombres)
 
 
 if __name__ == "__main__":

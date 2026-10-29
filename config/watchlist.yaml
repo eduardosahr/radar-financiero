@@ -42,3 +42,35 @@ macro:
     DGS10: Bono del Tesoro EE. UU. 10 años
     CPIAUCSL: Inflación EE. UU. (índice CPI)
     UNRATE: Desempleo EE. UU.
+
+noticias:
+  # Feeds RSS de medios (verificados el 2026-10-29).
+  feeds:
+    El Financiero (economía): https://www.elfinanciero.com.mx/arc/outboundfeeds/rss/category/economia/?outputType=xml
+    El Financiero (mercados): https://www.elfinanciero.com.mx/arc/outboundfeeds/rss/category/mercados/?outputType=xml
+    El Financiero (empresas): https://www.elfinanciero.com.mx/arc/outboundfeeds/rss/category/empresas/?outputType=xml
+    El Economista: https://www.eleconomista.com.mx/rss/ultimas-noticias
+    Expansión (economía): https://expansion.mx/rss/economia
+    Fed (política monetaria): https://www.federalreserve.gov/feeds/press_monetary.xml
+    CNBC (mercados): https://www.cnbc.com/id/20910258/device/rss/rss.html
+    MarketWatch: https://feeds.content.dowjones.io/public/rss/mw_topstories
+
+  # Búsquedas en Google Noticias. La clave puede ser un ticker de la lista de
+  # precios (para ligar la noticia con la emisora) o un tema libre.
+  # Usa nombres completos: "Banorte" a secas trae notas del Estadio Banorte.
+  busquedas:
+    banxico: Banxico OR "Banco de México" tasa
+    peso: '"peso mexicano" OR "tipo de cambio" dólar'
+    bmv: '"Bolsa Mexicana" OR BMV OR "S&P/BMV IPC"'
+    banca: CNBV OR "banca múltiple" OR "sistema bancario" México
+    GFNORTEO.MX: '"Grupo Financiero Banorte" OR GFNORTE'
+    BBAJIOO.MX: BanBajío OR "Banco del Bajío"
+    GFINBURO.MX: '"Grupo Financiero Inbursa" OR GFINBUR'
+    WALMEX.MX: '"Walmart de México" OR Walmex'
+    AMXB.MX: '"América Móvil"'
+    FEMSAUBD.MX: FEMSA OR OXXO
+    GMEXICOB.MX: '"Grupo México"'
+    CEMEXCPO.MX: Cemex
+    FUNO11.MX: '"Fibra Uno" OR FUNO'
+    FIBRAMQ12.MX: '"Fibra Macquarie" OR FIBRAMQ'
+  dias_busqueda: 2   # antigüedad máxima de las notas en Google Noticias

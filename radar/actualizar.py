@@ -6,7 +6,7 @@ Uso:  python -m radar.actualizar
 import warnings
 
 from radar import db
-from radar.collectors import macro, precios
+from radar.collectors import macro, noticias, precios
 from radar.config import cargar_watchlist
 
 # yfinance aún usa funciones de pandas que pandas 3 marca como obsoletas; no afectan los datos.
@@ -20,6 +20,8 @@ def main() -> None:
     precios.actualizar(con, watchlist)
     print("Macro (Banxico y FRED):")
     macro.actualizar(con, watchlist)
+    print("Noticias (Google Noticias y RSS):")
+    noticias.actualizar(con, watchlist)
     con.close()
     print("Listo. Ver resumen con:  python -m radar.resumen")
 

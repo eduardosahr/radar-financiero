@@ -22,6 +22,19 @@ CREATE TABLE IF NOT EXISTS macro (
     PRIMARY KEY (fuente, serie, fecha)
 );
 
+CREATE TABLE IF NOT EXISTS noticias (
+    id          TEXT PRIMARY KEY,   -- huella del título normalizado (detecta la misma nota en varias fuentes)
+    publicada   TEXT,               -- AAAA-MM-DD HH:MM:SS en UTC
+    medio       TEXT,               -- quién la publicó
+    titulo      TEXT NOT NULL,
+    resumen     TEXT,
+    url         TEXT,
+    origen      TEXT NOT NULL,      -- nombre del feed, o "google:<clave de búsqueda>"
+    clave       TEXT,               -- ticker o tema de la búsqueda que la encontró
+    descargada  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_noticias_publicada ON noticias (publicada);
+
 CREATE TABLE IF NOT EXISTS activos (
     clave   TEXT PRIMARY KEY,       -- ticker o id de serie
     nombre  TEXT NOT NULL,
@@ -37,18 +50,21 @@ def conectar() -> sqlite3.Connection:
     return con
 
 
-def guardar(con: sqlite3.Connection, tabla: str, df: pd.DataFrame) -> int:
-    """Inserta filas; si ya existen (misma llave), las reemplaza. Devuelve cuántas se escribieron."""
+def guardar(con: sqlite3.Connection, tabla: str, df: pd.DataFrame, reemplazar: bool = True) -> int:
+    """Inserta filas. Si ya existen (misma llave), las reemplaza, o las deja como están
+    con reemplazar=False. Devuelve cuántas filas nuevas o cambiadas se escribieron."""
     if df.empty:
         return 0
     columnas = ", ".join(df.columns)
     marcas = ", ".join("?" for _ in df.columns)
+    accion = "REPLACE" if reemplazar else "IGNORE"
+    antes = con.total_changes
     con.executemany(
-        f"INSERT OR REPLACE INTO {tabla} ({columnas}) VALUES ({marcas})",
+        f"INSERT OR {accion} INTO {tabla} ({columnas}) VALUES ({marcas})",
         df.itertuples(index=False, name=None),
     )
     con.commit()
-    return len(df)
+    return con.total_changes - antes
 
 
 def ultima_fecha(con: sqlite3.Connection, tabla: str, filtro: str, valor: str) -> str | None:
