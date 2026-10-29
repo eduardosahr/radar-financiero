@@ -49,7 +49,7 @@ def variacion(actual: pd.Series, previo: pd.Series) -> pd.Series:
 
 
 CONSULTA_SENALES = """
-SELECT e.ticker, act.nombre, e.direccion, a.confianza, a.resumen, n.medio, n.publicada
+SELECT e.ticker, act.nombre, e.direccion, a.confianza, a.resumen, n.medio, n.publicada, n.url
 FROM efectos e
 JOIN analisis a  ON a.noticia_id = e.noticia_id
 JOIN noticias n  ON n.id = e.noticia_id
@@ -90,29 +90,41 @@ def imprimir_noticias(n: pd.DataFrame, nombres: dict) -> None:
     print("\n  Horas en UTC (Ciudad de México = UTC - 6).")
 
 
-def main() -> None:
-    con = db.conectar()
+def cargar(con) -> dict:
+    """Todos los datos del resumen; los usan la terminal y el informe diario."""
     p = pd.read_sql(CONSULTA_PRECIOS, con)
-    m = pd.read_sql(CONSULTA_MACRO, con)
-    n = noticias.recientes(con)
-    nombres = dict(con.execute("SELECT clave, nombre FROM activos").fetchall())
-    desde = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
-    s = pd.read_sql(CONSULTA_SENALES, con, params=(desde,))
-    total, relevantes = con.execute(
-        """SELECT COUNT(*), COALESCE(SUM(a.relevante), 0) FROM analisis a
-           JOIN noticias n ON n.id = a.noticia_id WHERE n.publicada >= ?""", (desde,)).fetchone()
-    gasto = con.execute("SELECT COALESCE(SUM(costo_usd), 0) FROM uso_api").fetchone()[0]
-    con.close()
-
-    if p.empty and m.empty and n.empty:
-        print("La base está vacía. Corre primero:  python -m radar.actualizar")
-        return
-
     if not p.empty:
         p["1 día %"] = variacion(p["cierre"], p["cierre_1d"])
         p["5 días %"] = variacion(p["cierre"], p["cierre_5d"])
         p["1 mes %"] = variacion(p["cierre"], p["cierre_1m"])
         p["cierre"] = p["cierre"].round(2)
+    desde = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+    total, relevantes = con.execute(
+        """SELECT COUNT(*), COALESCE(SUM(a.relevante), 0) FROM analisis a
+           JOIN noticias n ON n.id = a.noticia_id WHERE n.publicada >= ?""", (desde,)).fetchone()
+    return {
+        "precios": p,
+        "macro": pd.read_sql(CONSULTA_MACRO, con),
+        "noticias": noticias.recientes(con),
+        "nombres": dict(con.execute("SELECT clave, nombre FROM activos").fetchall()),
+        "senales": pd.read_sql(CONSULTA_SENALES, con, params=(desde,)),
+        "analizadas": total,
+        "relevantes": relevantes,
+        "gasto_usd": con.execute("SELECT COALESCE(SUM(costo_usd), 0) FROM uso_api").fetchone()[0],
+    }
+
+
+def main() -> None:
+    con = db.conectar()
+    d = cargar(con)
+    con.close()
+    p, m = d["precios"], d["macro"]
+
+    if p.empty and m.empty and d["noticias"].empty:
+        print("La base está vacía. Corre primero:  python -m radar.actualizar")
+        return
+
+    if not p.empty:
         print("\nMERCADOS")
         print(p[["nombre", "fecha", "cierre", "1 día %", "5 días %", "1 mes %"]].to_string(index=False))
 
@@ -120,11 +132,11 @@ def main() -> None:
         print("\nMACRO (último dato)")
         print(m[["fuente", "nombre", "fecha", "valor"]].to_string(index=False))
 
-    if total:
-        imprimir_senales(s, total, relevantes)
-        print(f"\n  Gasto acumulado en la API de Anthropic: ~US${gasto:.4f}")
+    if d["analizadas"]:
+        imprimir_senales(d["senales"], d["analizadas"], d["relevantes"])
+        print(f"\n  Gasto acumulado en la API de Anthropic: ~US${d['gasto_usd']:.4f}")
     else:  # sin análisis todavía: mostrar titulares sin filtrar
-        imprimir_noticias(n, nombres)
+        imprimir_noticias(d["noticias"], d["nombres"])
 
 
 if __name__ == "__main__":

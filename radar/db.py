@@ -53,6 +53,29 @@ CREATE TABLE IF NOT EXISTS efectos (
     PRIMARY KEY (noticia_id, ticker)
 );
 
+CREATE TABLE IF NOT EXISTS estados (
+    ticker      TEXT NOT NULL,
+    frecuencia  TEXT NOT NULL,      -- trimestral | anual
+    estado      TEXT NOT NULL,      -- resultados | balance | flujo
+    fecha       TEXT NOT NULL,      -- cierre del periodo, AAAA-MM-DD
+    concepto    TEXT NOT NULL,      -- nombre del renglón en Yahoo Finance (en inglés)
+    valor       REAL,
+    PRIMARY KEY (ticker, frecuencia, estado, fecha, concepto)
+);
+
+CREATE TABLE IF NOT EXISTS perfil (
+    ticker         TEXT PRIMARY KEY,
+    nombre_largo   TEXT,
+    sector         TEXT,
+    industria      TEXT,
+    moneda         TEXT,
+    capitalizacion REAL,
+    pu             REAL,            -- precio / utilidad (últimos 12 meses)
+    p_vl           REAL,            -- precio / valor en libros
+    rend_dividendo REAL,            -- % anual
+    actualizado    TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS uso_api (
     fecha          TEXT NOT NULL,   -- AAAA-MM-DD HH:MM:SS UTC
     modelo         TEXT NOT NULL,

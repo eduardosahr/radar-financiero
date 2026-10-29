@@ -152,11 +152,44 @@ def actualizar(con, watchlist: dict) -> None:
         salida += uso.output_tokens
         analizadas += guardar_resultados(con, resultados, set(lote["id"]), set(activos), modelo)
 
+    costo = registrar_uso(con, cfg, llamadas, entrada, salida)
+    print(f"  {analizadas} de {len(notas)} notas analizadas en {llamadas} llamadas "
+          f"({entrada:,} tokens de entrada, {salida:,} de salida, ~US${costo:.4f})")
+
+
+def registrar_uso(con, cfg: dict, llamadas: int, entrada: int, salida: int) -> float:
+    """Guarda el gasto estimado en la tabla uso_api y lo devuelve en dólares."""
     precio = cfg["precio_usd_por_millon"]
     costo = (entrada * precio["entrada"] + salida * precio["salida"]) / 1_000_000
     if llamadas:
         db.guardar(con, "uso_api", pd.DataFrame([{
-            "fecha": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "modelo": modelo,
+            "fecha": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "modelo": cfg["modelo"],
             "llamadas": llamadas, "tokens_entrada": entrada, "tokens_salida": salida, "costo_usd": costo}]))
-    print(f"  {analizadas} de {len(notas)} notas analizadas en {llamadas} llamadas "
-          f"({entrada:,} tokens de entrada, {salida:,} de salida, ~US${costo:.4f})")
+    return costo
+
+
+INSTRUCCIONES_FICHA = """Eres analista financiero. Con las razones financieras y las señales de \
+noticias de una emisora mexicana, escribe en español, para un inversionista que está aprendiendo:
+
+1. Fortalezas (2 viñetas, con la cifra que lo respalda).
+2. Riesgos o debilidades (2 viñetas, con la cifra).
+3. Qué vigilar en el próximo reporte (1 o 2 viñetas).
+
+Usa solo los datos recibidos; si falta un dato, dilo. Si es banco o FIBRA, recuerda que la \
+liquidez y el margen operativo no se interpretan igual que en una empresa comercial. No des \
+recomendaciones de compra o venta. Máximo 180 palabras, sin títulos extra."""
+
+
+def interpretar_ficha(con, cfg: dict, texto_ficha: str) -> str:
+    client = anthropic.Anthropic()
+    respuesta = client.messages.create(
+        model=cfg["modelo"],
+        max_tokens=4000,
+        system=INSTRUCCIONES_FICHA,
+        output_config={"effort": "low"},
+        messages=[{"role": "user", "content": texto_ficha}],
+    )
+    registrar_uso(con, cfg, 1, respuesta.usage.input_tokens, respuesta.usage.output_tokens)
+    if respuesta.stop_reason == "refusal":
+        return "(El modelo no generó la interpretación.)"
+    return "".join(b.text for b in respuesta.content if b.type == "text").strip()
